@@ -22,7 +22,7 @@ export const defaultSettings: Settings = {
   music_refreshInterval: 15000,
 
   // adb
-  adb_useGlobal: false,
+  adb_useGlobal: true,
   adb_autoConfig: false,
   adb_autoDetect: true,
   adb_blacklist: [],

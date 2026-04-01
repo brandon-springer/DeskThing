@@ -78,8 +78,50 @@ function assetPathPlugin(): Plugin {
   }
 }
 
+/**
+ * Plugin to stub electron-updater with a no-op autoUpdater.
+ */
+function electronUpdaterStubPlugin(): Plugin {
+  return {
+    name: 'headless-electron-updater-stub',
+    enforce: 'pre',
+
+    resolveId(source) {
+      if (source === 'electron-updater') {
+        return '\0electron-updater-stub'
+      }
+      return null
+    },
+
+    load(id) {
+      if (id === '\0electron-updater-stub') {
+        return `
+          const autoUpdater = {
+            checkForUpdates: () => Promise.resolve(null),
+            checkForUpdatesAndNotify: () => Promise.resolve(null),
+            downloadUpdate: () => Promise.resolve(),
+            quitAndInstall: () => {},
+            on: () => {},
+            once: () => {},
+            removeListener: () => {},
+            setFeedURL: () => {},
+            currentVersion: { version: '0.0.0' },
+            autoDownload: false,
+            autoInstallOnAppQuit: false,
+            logger: null,
+            forceDevUpdateConfig: false,
+          };
+          export { autoUpdater };
+          export default { autoUpdater };
+        `
+      }
+      return null
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [modulePathPlugin(), assetPathPlugin()],
+  plugins: [modulePathPlugin(), assetPathPlugin(), electronUpdaterStubPlugin()],
   build: {
     target: 'node22',
     outDir: 'out-headless',
@@ -98,6 +140,7 @@ export default defineConfig({
         if (
           id === 'electron' ||
           id === 'electron/main' ||
+          id === 'electron-updater' ||
           id.includes('@electron-toolkit') ||
           id.startsWith('@shared') ||
           id.startsWith('@server') ||

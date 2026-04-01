@@ -270,6 +270,31 @@ export class Notification {
   show(): void {}
 }
 
+/**
+ * Mock electron-updater autoUpdater
+ * Exported separately so it can be aliased for the electron-updater package
+ */
+export const autoUpdater = {
+  checkForUpdates: (): Promise<null> => Promise.resolve(null),
+  checkForUpdatesAndNotify: (): Promise<null> => Promise.resolve(null),
+  downloadUpdate: (): Promise<void> => Promise.resolve(),
+  quitAndInstall: (): void => {},
+  on: (): void => {},
+  once: (): void => {},
+  removeListener: (): void => {},
+  setFeedURL: (): void => {},
+  currentVersion: { version: '0.0.0' },
+  autoDownload: false,
+  autoInstallOnAppQuit: false,
+  logger: null as unknown,
+  forceDevUpdateConfig: false,
+}
+
+// Default export for electron-updater compatibility (import electronUpdater from 'electron-updater')
+export const electronUpdaterDefault = {
+  autoUpdater
+}
+
 // Re-export as default module shape
 export default {
   app,

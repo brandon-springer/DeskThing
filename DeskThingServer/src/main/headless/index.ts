@@ -48,13 +48,21 @@ async function main(): Promise<void> {
   console.log('[headless] WebSocket/HTTP server on port 8891')
   console.log('[headless] Press Ctrl+C to stop')
 
-  // Run background startup tasks after a delay
+  // Run background startup tasks after a delay (skip update check - no Electron updater)
   setTimeout(async () => {
     try {
-      const { afterStartTasks } = await import(
-        '../services/initialization/AfterStartupTasks'
-      )
-      afterStartTasks()
+      const { storeProvider } = await import('../stores/storeProvider')
+
+      const releaseStore = await storeProvider.getStore('releaseStore')
+      await releaseStore.refreshData()
+
+      const notificationStore = await storeProvider.getStore('notificationStore')
+      await notificationStore.checkForNotifications()
+
+      const timeStore = await storeProvider.getStore('timeStore')
+      await timeStore.initialize()
+
+      console.log('[headless] Post-startup tasks complete')
     } catch (error) {
       console.error('[headless] Failed to run startup tasks:', error)
     }

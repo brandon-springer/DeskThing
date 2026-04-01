@@ -19,6 +19,9 @@
     "build": "node electron-builder.env.js && npm run typecheck && electron-vite build && electron-builder",
     "postinstall": "electron-builder install-app-deps && electron-rebuild && npm rebuild sharp",
     "build:unpack": "npm run build && electron-builder --dir",
+    "build:headless": "vite build --config vite.headless.config.ts",
+    "start:headless": "node out-headless/index.mjs",
+    "dev:headless": "npm run build:headless && npm run start:headless",
     "test": "vitest"
   },
   "repository": {

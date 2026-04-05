@@ -1,4 +1,4 @@
-import { app } from 'electron/main'
+import { getVersion, getResourcesPath } from '@server/utils/paths'
 import crypto from 'crypto'
 import { join } from 'path'
 import { existsSync, readFileSync } from 'fs'
@@ -20,7 +20,7 @@ let decryptedSecrets: Secrets = {}
 
 function createDecryptionKey(): Buffer {
   // Must match the salt and keyMaterial from electron-builder.env.js
-  const keyMaterial = `${app.getVersion()}-deskthing-secrets`
+  const keyMaterial = `${getVersion()}-deskthing-secrets`
   return crypto.scryptSync(keyMaterial, 'dt-salt-v1', 32)
 }
 
@@ -54,7 +54,7 @@ function addSecretsToEnv(): void {
 
 function loadConfig(): void {
   try {
-    const configPath = join(process.resourcesPath, 'config.json')
+    const configPath = getResourcesPath('config.json')
     if (existsSync(configPath)) {
       const configData = readFileSync(configPath, 'utf8')
       configuration = JSON.parse(configData) as AppConfig

@@ -1,6 +1,6 @@
 import { getAppFilePath } from '../apps/appUtils'
 import path from 'node:path'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { readFile } from 'node:fs/promises'
 import { Action } from '@deskthing/types'
 import logger from '@server/utils/logger'
@@ -18,7 +18,7 @@ export const FetchIcon = async (action: Action): Promise<string | null> => {
   try {
     const iconPath =
       action.source === 'server'
-        ? path.join(app.getPath('userData'), 'webapp', 'icons', `${action.icon || action.id}.svg`)
+        ? path.join(getUserDataPath(), 'webapp', 'icons', `${action.icon || action.id}.svg`)
         : path.join(getAppFilePath(action.source), 'icons', `${action.icon || action.id}.svg`)
 
     return await readFile(iconPath, 'utf8')

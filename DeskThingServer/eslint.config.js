@@ -1,27 +1,12 @@
-import tseslint from '@electron-toolkit/eslint-config-ts'
-import eslintConfigPrettier from '@electron-toolkit/eslint-config-prettier'
-import eslintPluginReact from 'eslint-plugin-react'
-import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import eslintConfigPrettier from 'eslint-plugin-prettier/recommended'
 
 export default tseslint.config(
-  { ignores: ['**/node_modules', '**/dist', '**/out', '**/build'] },
+  { ignores: ['**/node_modules', '**/dist', '**/out', '**/out-headless', '**/build'] },
   tseslint.configs.recommended,
-  eslintPluginReact.configs.flat.recommended,
-  eslintPluginReact.configs.flat['jsx-runtime'],
   {
-    settings: {
-      react: {
-        version: 'detect'
-      }
-    }
-  },
-  {
-    files: ['src/**/*.{ts,tsx}'],
-    plugins: {
-      'react-refresh': eslintPluginReactRefresh
-    },
+    files: ['src/**/*.ts'],
     rules: {
-      ...eslintPluginReactRefresh.configs.vite.rules,
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
       '@typescript-eslint/no-unused-vars': [
         'error',

@@ -44,10 +44,11 @@ export class StatsStore implements StatsStoreClass {
       const privateKey = await DeskThingStats.readPrivateKey(privateKeyData)
       this.stats = new DeskThingStats(clientId, privateKey)
 
-      // Handle registration on first initialization
-      await this.ensureRegistration()
-
-      this.startFlushInterval()
+      // Handle registration on first initialization (only if stats are enabled)
+      if (this.collectStats) {
+        await this.ensureRegistration()
+        this.startFlushInterval()
+      }
       this._initialized = true
 
       logger.info('Stats store initialized', {
@@ -62,7 +63,14 @@ export class StatsStore implements StatsStoreClass {
       })
     }
 
-    this.collectStats = (await this.settingStore.getSetting('flag_collectStats')) || false
+    this.collectStats = (await this.settingStore.getSetting('flag_collectStats')) ?? false
+
+    if (!this.collectStats) {
+      logger.info('Stats collection is disabled', {
+        function: 'initialize',
+        source: 'statsStore'
+      })
+    }
 
     this.settingStore.on('flag_collectStats', async (collectStats) => {
       if (collectStats) {

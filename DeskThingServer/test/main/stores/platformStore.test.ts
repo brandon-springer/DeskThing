@@ -33,18 +33,13 @@ vi.mock('@server/services/files/fileService', () => ({
   readFile: vi.fn()
 }))
 
-vi.mock('electron', () => ({
-  app: {
-    getPath: vi.fn(() => '/'),
-    getVersion: vi.fn(() => '0.11.0')
-  }
-}))
-
-vi.mock('electron/main', () => ({
-  app: {
-    getPath: vi.fn(() => '/'),
-    getVersion: vi.fn(() => '0.11.0')
-  }
+vi.mock('@server/utils/paths', () => ({
+  getUserDataPath: vi.fn().mockReturnValue('/'),
+  getTempPath: vi.fn().mockReturnValue('/temp'),
+  getLogsPath: vi.fn().mockReturnValue('/logs'),
+  getExePath: vi.fn().mockReturnValue('/mock/exe'),
+  getResourcesPath: vi.fn().mockReturnValue('/resources'),
+  getVersion: vi.fn().mockReturnValue('0.11.0'),
 }))
 
 describe('PlatformStore', () => {

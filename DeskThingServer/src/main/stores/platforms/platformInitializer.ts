@@ -2,6 +2,7 @@ import Logger from '@server/utils/logger'
 import { storeProvider } from '@server/stores/storeProvider'
 import { WebSocketPlatform } from './websocket/wsPlatform'
 import { ADBPlatform } from './superbird/adbPlatform'
+import { uiEventBus } from '@server/services/events/uiBus'
 
 export async function initializePlatforms(): Promise<void> {
   try {
@@ -17,6 +18,11 @@ export async function initializePlatforms(): Promise<void> {
     await platformStore.startPlatform(wsPlatform.id, {
       port: 8891,
       address: '0.0.0.0'
+    })
+
+    // Wire uiEventBus to push admin events through the WebSocket worker
+    uiEventBus.setAdminBroadcaster((data) => {
+      wsPlatform.broadcastAdminEvent(data)
     })
 
     await platformStore.startPlatform(adbPlatform.id, {

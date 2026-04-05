@@ -375,7 +375,7 @@ export class MusicService implements MusicStoreClass {
         await this.settingsStore.saveSetting('music_playbackLocation', app)
         return app
       } else {
-        Logger.log(LOGGING_LEVELS.ERROR, `No audio source found. Please install an audio app.`)
+        Logger.log(LOGGING_LEVELS.LOG, `No audio source found. Please install an audio app.`)
         return null
       }
     }

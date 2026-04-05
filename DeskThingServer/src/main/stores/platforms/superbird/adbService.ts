@@ -2,7 +2,7 @@ import { handleAdbCommands } from '../../../handlers/adbHandler'
 import logger from '@server/utils/logger'
 import { ClientConnectionMethod } from '@deskthing/types'
 import { join } from 'path'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import * as fs from 'fs'
 import { ClientManifest } from '@deskthing/types'
 import {
@@ -221,7 +221,7 @@ export class ADBService implements ADBServiceClass {
   }
 
   private async checkForClient(): Promise<boolean> {
-    const userDataPath = app.getPath('userData')
+    const userDataPath = getUserDataPath()
     const manifestPath = join(userDataPath, 'webapp', 'manifest.json')
     return fs.existsSync(manifestPath)
   }
@@ -289,7 +289,7 @@ export class ADBService implements ADBServiceClass {
 
     if (clientManifest && (deviceVersion !== clientManifest.version || forcePush)) {
       progressBus.update(ProgressChannel.CONFIGURE_DEVICE, 'Extracting webapp', 40)
-      const userDataPath = app.getPath('userData')
+      const userDataPath = getUserDataPath()
       const extractDir = join(userDataPath, 'webapp')
 
       // Modify the manifest

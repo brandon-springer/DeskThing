@@ -1,9 +1,9 @@
 import { getLocalIpAddresses } from '@server/utils/address'
 import { Settings, LOG_FILTER, LOG_CONTEXTS } from '@shared/types'
-import { app } from 'electron'
+import { getVersion } from '@server/utils/paths'
 
 export const defaultSettings: Settings = {
-  version: app.getVersion(),
+  version: getVersion(),
   // server
   server_LogLevel: LOG_FILTER.INFO,
   server_LogContext: [LOG_CONTEXTS.APP, LOG_CONTEXTS.CLIENT, LOG_CONTEXTS.SERVER],

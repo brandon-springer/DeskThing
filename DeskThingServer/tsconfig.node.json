@@ -1,18 +1,9 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": [
-    "electron.vite.config.*",
-    "src/main/**/*",
-    "src/preload/**/*",
-    "src/shared/**/*.ts",
-    "src/main/processes/**/*",
-    "test/**/*.ts"
-  ],
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext"],
     "moduleResolution": "Node",
     "strict": true,
     "resolveJsonModule": true,
@@ -23,12 +14,19 @@
     "paths": {
       "@processes/*": ["src/main/processes/*"],
       "@server/*": ["src/main/*"],
-      "@shared/*": ["src/shared/*"],
+      "@shared/*": ["src/shared/*"]
     },
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "composite": true,
-    "types": ["electron-vite/node", "vitest/globals"]
-  }
+    "types": ["vitest/globals"]
+  },
+  "include": [
+    "vite.config.*",
+    "src/main/**/*",
+    "src/shared/**/*.ts",
+    "src/main/processes/**/*",
+    "test/**/*.ts"
+  ]
 }

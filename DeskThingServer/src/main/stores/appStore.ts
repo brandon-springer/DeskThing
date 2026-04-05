@@ -29,6 +29,7 @@ import Logger from '@server/utils/logger'
 import { getIcon } from '@server/services/apps/appUtils'
 import { executeStagedFile, stageAppFile } from '@server/services/apps/appInstaller'
 import { loadAndRunEnabledApps } from '@server/services/apps/appRunner'
+import { discoverApps } from '@server/services/apps/appDiscovery'
 import { deleteAppPath, setAppData, setAppsData } from '../services/files/appFileService'
 
 // // Validation
@@ -288,6 +289,7 @@ export class AppStore implements CacheableStore, AppStoreClass {
 
     // Wait another tick because it takes two for the UI to load - this is a low priority task
     nextTick(async () => {
+      await discoverApps()
       await loadAndRunEnabledApps()
     })
   }

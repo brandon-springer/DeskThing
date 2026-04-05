@@ -1,27 +1,23 @@
 {
   "name": "deskthing",
   "version": "0.11.17",
-  "description": "A DeskThing server UI to interface with the DeskThing car thing app",
-  "main": "./out/main/index.js",
+  "description": "A DeskThing server to interface with the DeskThing car thing app",
+  "main": "./out-headless/index.mjs",
   "author": "Riprod",
   "type": "module",
   "homepage": "https://github.com/ItsRiprod/DeskThing",
   "scripts": {
-    "format": "prettier --write .",
+    "build:server": "vite build --config vite.config.ts",
+    "build:admin": "cd admin && npx vite build",
+    "build": "npm run build:server && npm run build:admin",
+    "start": "node out-headless/index.mjs",
+    "dev": "npm run build && npm run start",
+    "dev:admin": "cd admin && npx vite --port 5173",
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
-    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
-    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "start": "electron-vite preview",
-    "dev": "electron-vite dev",
-    "debug": "electron-vite dev --inspect=8893",
-    "build": "node electron-builder.env.js && npm run typecheck && electron-vite build && electron-builder",
-    "postinstall": "electron-builder install-app-deps && electron-rebuild && npm rebuild sharp",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:headless": "vite build --config vite.headless.config.ts",
-    "start:headless": "node out-headless/index.mjs",
-    "dev:headless": "npm run build:headless && npm run start:headless",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "postinstall": "npm rebuild sharp",
     "test": "vitest"
   },
   "repository": {
@@ -29,173 +25,35 @@
     "url": "https://github.com/itsriprod/DeskThing.git"
   },
   "dependencies": {
-    "@electron-toolkit/utils": "^3.0.0",
     "adm-zip": "^0.5.16",
     "auto-launch": "^5.0.6",
     "cors": "^2.8.5",
-    "dompurify": "^3.2.3",
     "dotenv": "^16.4.7",
-    "electron-updater": "^6.1.7",
     "express": "^4.21.0",
     "flashthing": "^0.1.5",
-    "lottie-react": "^2.4.0",
-    "react-qr-code": "^2.0.15",
-    "react-rewards": "^2.0.4",
-    "react-router-dom": "^6.26.2",
-    "react-select": "^5.8.3",
-    "react-tag-input": "^6.10.3",
     "semver": "^7.6.3",
     "sharp": "^0.34.2",
     "uuid": "^10.0.0",
-    "ws": "^8.17.1",
-    "zustand": "^5.0.0-rc.2"
+    "ws": "^8.17.1"
   },
   "devDependencies": {
     "@deskthing/types": "^0.11.18",
-    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
-    "@electron-toolkit/eslint-config-ts": "^3.0.0",
-    "@electron-toolkit/preload": "^3.0.1",
-    "@electron-toolkit/tsconfig": "^1.0.1",
-    "@electron/notarize": "^2.5.0",
-    "@electron/rebuild": "^4.0.1",
     "@eslint/js": "^9.21.0",
     "@types/adm-zip": "^0.5.7",
-    "@types/auto-launch": "^5.0.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^18.19.9",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.13",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.19",
-    "electron-builder": "^24.9.1",
-    "electron-vite": "^3.0.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.21.0",
     "eslint-plugin-prettier": "^5.2.3",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
-    "postcss": "^8.4.38",
-    "postcss-loader": "^8.1.1",
     "prettier": "^3.2.4",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwindcss": "^3.4.4",
     "typedoc": "^0.27.6",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.25.0",
     "vite": "^6.2.0",
     "vitest": "^3.0.7"
-  },
-  "build": {
-    "appId": "com.deskthing.app",
-    "productName": "DeskThing",
-    "directories": {
-      "buildResources": "build"
-    },
-    "afterSign": "build/notarize.js",
-    "files": [
-      "!**/.vscode/*",
-      "!src/*",
-      "!electron.vite.config.{js,ts,mjs,cjs}",
-      "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}",
-      "!{.env,.npmrc,pnpm-lock.yaml}",
-      "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
-    ],
-    "extraResources": [
-      {
-        "from": "src/main/config.json",
-        "to": "config.json"
-      }
-    ],
-    "asarUnpack": [
-      "resources/**",
-      "bin/**",
-      "!resources/{,/**/}*.{h,hpp,cpp,cc,cxx}",
-      "**/node_modules/sharp/**/*",
-      "**/node_modules/@img/**/*"
-    ],
-    "protocols": [
-      {
-        "name": "DeskThing Protocol",
-        "schemes": [
-          "deskthing"
-        ]
-      }
-    ],
-    "win": {
-      "verifyUpdateCodeSignature": false,
-      "executableName": "DeskThing",
-      "artifactName": "${name}-${os}-${version}-setup.${ext}",
-      "publisherName": "Riprod",
-      "extraFiles": [
-        {
-          "from": "adb_source/win",
-          "to": "resources/win"
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": true,
-      "artifactName": "${name}-${os}-${version}-setup.${ext}",
-      "shortcutName": "${productName}",
-      "uninstallDisplayName": "${productName}",
-      "createDesktopShortcut": "always",
-      "deleteAppDataOnUninstall": true,
-      "perMachine": false,
-      "allowElevation": true
-    },
-    "mac": {
-      "gatekeeperAssess": false,
-      "hardenedRuntime": true,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "extendInfo": {
-        "NSAppleEventsUsageDescription": "This app requires access to send Apple Events to communicate with other applications.",
-        "NSMicrophoneUsageDescription": "This app requires microphone access to record audio."
-      },
-      "notarize": false,
-      "category": "public.app-category.developer-tools",
-      "extraFiles": [
-        {
-          "from": "adb_source/mac",
-          "to": "resources/mac"
-        }
-      ]
-    },
-    "dmg": {
-      "sign": false,
-      "artifactName": "${name}-${os}-${arch}-${version}-setup.${ext}"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "maintainer": "Riprod",
-      "category": "Utility",
-      "extraFiles": [
-        {
-          "from": "adb_source/linux",
-          "to": "resources/linux"
-        }
-      ]
-    },
-    "appImage": {
-      "artifactName": "${name}-${os}-${version}-setup.${ext}"
-    },
-    "npmRebuild": false,
-    "publish": {
-      "provider": "github",
-      "owner": "ItsRiprod",
-      "repo": "DeskThing",
-      "releaseType": "release"
-    }
-  },
-  "electronDownload": {
-    "mirror": "https://npmmirror.com/mirrors/electron/"
   }
 }

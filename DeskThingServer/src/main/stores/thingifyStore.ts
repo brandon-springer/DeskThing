@@ -9,7 +9,7 @@ import {
 } from '@shared/types'
 import EventEmitter from 'node:events'
 import { ThingifyStoreClass, ThingifyStoreEvents } from '@shared/stores/thingifyStore'
-import { app } from 'electron/main'
+import { getUserDataPath } from '@server/utils/paths'
 import { basename, dirname, join } from 'node:path'
 import { handleError } from '@server/utils/errorHandler'
 import { access, copyFile, mkdir, readdir, unlink, writeFile } from 'node:fs/promises'
@@ -41,7 +41,7 @@ export class ThingifyStore
 
   constructor() {
     super()
-    this.downloadLocation = join(app.getPath('userData'), 'flash')
+    this.downloadLocation = join(getUserDataPath(), 'flash')
   }
 
   async initialize(): Promise<void> {

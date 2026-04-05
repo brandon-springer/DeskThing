@@ -35,12 +35,14 @@ process.title = 'Websocket'
 
 export class WSPlatform {
   private server: WebSocketServer | null = null
+  private adminWss: WebSocketServer | null = null
   private httpServer: HttpServer | null = null
   private clients: Map<string, { client: Client; socket: WebSocket }> = new Map()
+  private adminClients: Set<WebSocket> = new Set()
   private isActive: boolean = false
   private startTime: number = 0
   private userDataPath: string
-  private expressServer: ExpressServer | null = null
+  public expressServer: ExpressServer | null = null
   private options: PlatformConnectionOptions<AdditionalOptions> = {
     port: 8891,
     address: 'localhost'
@@ -92,11 +94,36 @@ export class WSPlatform {
     this.setupExpressListeners()
     this.httpServer = this.expressServer.getServer() as HttpServer
 
-    this.server = new WebSocketServer({ server: this.httpServer })
+    // Two WebSocket servers: one for device clients, one for admin panel
+    this.server = new WebSocketServer({ noServer: true })
+    this.adminWss = new WebSocketServer({ noServer: true })
 
     this.server.on('connection', this.handleConnection.bind(this))
 
-    this.server.on('listening', () => {
+    this.adminWss.on('connection', (ws: WebSocket) => {
+      this.adminClients.add(ws)
+      console.log(`[Admin WS] Client connected (${this.adminClients.size} total)`)
+      ws.on('close', () => {
+        this.adminClients.delete(ws)
+        console.log(`[Admin WS] Client disconnected (${this.adminClients.size} total)`)
+      })
+    })
+
+    // Route upgrade requests based on URL path
+    this.httpServer.on('upgrade', (request: IncomingMessage, socket, head) => {
+      const pathname = request.url || '/'
+      if (pathname === '/ws/admin') {
+        this.adminWss!.handleUpgrade(request, socket, head, (ws) => {
+          this.adminWss!.emit('connection', ws, request)
+        })
+      } else {
+        this.server!.handleUpgrade(request, socket, head, (ws) => {
+          this.server!.emit('connection', ws, request)
+        })
+      }
+    })
+
+    this.httpServer.on('listening', () => {
       this.sendToParent({ event: PlatformEvent.SERVER_STARTED, data: { port, address } })
     })
 
@@ -746,6 +773,15 @@ export class WSPlatform {
     }
   }
 
+  broadcastToAdminClients(data: unknown): void {
+    const msg = JSON.stringify(data)
+    for (const ws of this.adminClients) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(msg)
+      }
+    }
+  }
+
   async handleCustomEvent(data: WebsocketPlatformIPC): Promise<void> {
     switch (data.type) {
       case 'disconnect':
@@ -812,6 +848,14 @@ if (parentPort) {
         break
       case 'websocketEvent':
         await platform.handleCustomEvent(message.data)
+        break
+      case 'admin-api-response':
+        // Forward admin API response back to the Express request/reply bridge
+        platform.expressServer?.handleAdminResponse(message)
+        break
+      case 'admin-push':
+        // Broadcast push event to all admin WebSocket clients
+        platform.broadcastToAdminClients(message.data)
         break
     }
   })

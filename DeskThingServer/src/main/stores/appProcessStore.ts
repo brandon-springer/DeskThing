@@ -11,7 +11,7 @@ import {
   AppToDeskThingData
 } from '@deskthing/types'
 import appProcessPath from '@processes/appProcess?modulePath'
-import { app /*, utilityProcess */ } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { Worker } from 'node:worker_threads'
 import Logger from '@server/utils/logger'
 import { dirname, join } from 'node:path'
@@ -74,7 +74,7 @@ export class AppProcessStore
       'server/index.cjs'
     ]
 
-    const appPath = join(app.getPath('userData'), 'apps', appName)
+    const appPath = join(getUserDataPath(), 'apps', appName)
 
     for (const path of possiblePaths) {
       const fullPath = join(appPath, path)

@@ -13,7 +13,7 @@ import os from 'os'
 import { StatsStoreClass } from '@shared/stores/statsStore'
 import { StoreInterface } from '@shared/interfaces/storeInterface'
 import { CacheableStore } from '@shared/types'
-import { app } from 'electron/main'
+import { getVersion } from '@server/utils/paths'
 
 /**
  * StatsCollector class responsible for listening to store events and collecting statistics
@@ -212,7 +212,7 @@ export class StatsCollector implements StoreInterface, CacheableStore {
   private collectSystemStats(): void {
     const systemInfo = {
       os: os.platform(),
-      version: app.getVersion(),
+      version: getVersion(),
       arch: os.arch(),
       nodeVersion: process.version,
       uptime: process.uptime()

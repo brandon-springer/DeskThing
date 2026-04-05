@@ -12,7 +12,6 @@ import {
   Key,
   NotificationMessage
 } from '@deskthing/types'
-import { BrowserWindow, IpcRendererEvent } from 'electron'
 import {
   ProgressEvent,
   Log,
@@ -23,15 +22,6 @@ import {
   FlashingState
 } from '..'
 
-export type IpcRendererCallback<T extends ServerIPCData['type']> = (
-  event: IpcRendererEvent,
-  response: Extract<ServerIPCData, { type: T }>['payload']
-) => void
-
-export type IpcRendererFunction = <T extends ServerIPCData['type']>(
-  channel: T,
-  callback: IpcRendererCallback<T>
-) => void
 
 export type LinkRequest = { url: string; app: string }
 
@@ -39,7 +29,7 @@ export type LinkRequest = { url: string; app: string }
  * OUTGOING DATA TYPES FROM SERVER BACKEND TO SERVER FRONTEND
  */
 export type ServerIPCData = {
-  window?: BrowserWindow | null
+  window?: unknown
 } & (
   | {
       type: 'app-data'

@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { SongAbilities, SongData } from '@deskthing/types'
 import Logger from '@server/utils/logger'
 import { join } from 'path'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 
 export enum SongCacheEvents {
@@ -89,7 +89,7 @@ export class SongCache extends EventEmitter<SongCacheEventMap> {
       const imageBuffer = Buffer.from(thumbnail.split(',')[1], 'base64')
 
       // Store in a dedicated thumbnails directory
-      const thumbnailsDir = join(app.getPath('userData'), 'thumbnails')
+      const thumbnailsDir = join(getUserDataPath(), 'thumbnails')
       if (!existsSync(thumbnailsDir)) {
         mkdirSync(thumbnailsDir, { recursive: true })
       }
@@ -107,7 +107,7 @@ export class SongCache extends EventEmitter<SongCacheEventMap> {
 
       // Create a symbolic link or copy to our resource directory
       const imageId = (song.id || `${song.track_name}-${song.artist}`).replace(/[<>:"/\\|?*]/g, '_')
-      const thumbnailsDir = join(app.getPath('userData'), 'thumbnails')
+      const thumbnailsDir = join(getUserDataPath(), 'thumbnails')
       if (!existsSync(thumbnailsDir)) {
         mkdirSync(thumbnailsDir, { recursive: true })
       }

@@ -20,10 +20,13 @@ vi.mock('@server/services/files/dataFileService', () => ({
   purgeAppData: vi.fn()
 }))
 
-vi.mock('electron', () => ({
-  app: {
-    getPath: vi.fn()
-  }
+vi.mock('@server/utils/paths', () => ({
+  getUserDataPath: vi.fn().mockReturnValue('/mock/path'),
+  getTempPath: vi.fn().mockReturnValue('/mock/path/temp'),
+  getLogsPath: vi.fn().mockReturnValue('/mock/path/logs'),
+  getExePath: vi.fn().mockReturnValue('/mock/exe'),
+  getResourcesPath: vi.fn().mockReturnValue('/mock/path/resources'),
+  getVersion: vi.fn().mockReturnValue('0.0.0'),
 }))
 vi.mock('@server/utils/logger', () => ({
   default: {

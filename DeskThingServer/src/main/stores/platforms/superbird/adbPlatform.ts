@@ -19,7 +19,7 @@ import { ADBService } from './adbService'
 import { storeProvider } from '@server/stores/storeProvider'
 import logger from '@server/utils/logger'
 import { PlatformIPC } from '@shared/types/ipc/ipcPlatform'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { progressBus } from '@server/services/events/progressBus'
@@ -286,7 +286,7 @@ export class ADBPlatform extends EventEmitter<PlatformEvents> implements Platfor
   }
 
   private async updateClientManifest(manifest: Partial<ClientManifest>): Promise<void> {
-    const userDataPath = app.getPath('userData')
+    const userDataPath = getUserDataPath()
     const manifestPath = join(userDataPath, 'webapp', 'manifest.json')
 
     try {

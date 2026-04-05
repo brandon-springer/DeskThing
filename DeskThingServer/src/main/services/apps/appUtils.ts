@@ -4,7 +4,7 @@ import { constructManifest } from './appValidator'
 import Logger from '@server/utils/logger'
 import { AppManifest, LOGGING_LEVELS } from '@deskthing/types'
 import { existsSync } from 'node:fs'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 
 /**
  * Retrieves and parses the manifest file for an app.
@@ -46,7 +46,7 @@ export function getAppFilePath(appName: string, fileName: string = '/'): string 
   if (appName == 'developer-app') {
     Logger.log(LOGGING_LEVELS.ERROR, 'Developer app does not exist!')
   } else {
-    path = join(app.getPath('userData'), 'apps', appName, fileName)
+    path = join(getUserDataPath(), 'apps', appName, fileName)
   }
   return path
 }

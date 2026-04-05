@@ -1,11 +1,11 @@
 import { updateLoadingStatus } from '@server/windows/loadingWindow'
 import { Settings } from '@shared/types'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 
 export const getCurrentVersion = async (): Promise<string | undefined> => {
-  const settingsPath = join(app.getPath('userData'), 'settings.json')
+  const settingsPath = join(getUserDataPath(), 'settings.json')
 
   updateLoadingStatus('Checking version')
   try {
@@ -20,7 +20,7 @@ export const getCurrentVersion = async (): Promise<string | undefined> => {
 export const getSetting = async <K extends keyof Settings>(
   settingId: K
 ): Promise<Settings[K] | undefined> => {
-  const settingsPath = join(app.getPath('userData'), 'settings.json')
+  const settingsPath = join(getUserDataPath(), 'settings.json')
 
   updateLoadingStatus('Getting setting ' + settingId)
   try {

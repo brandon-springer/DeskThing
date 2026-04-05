@@ -17,12 +17,14 @@ import {
   PlatformIDs
 } from '@deskthing/types'
 import wsPath from './wsWebsocket?modulePath'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import logger from '@server/utils/logger'
 import EventEmitter from 'node:events'
 import { PlatformIPC } from '@shared/types/ipc/ipcPlatform'
 import { progressBus } from '@server/services/events/progressBus'
 import { ProgressChannel } from '@shared/types'
+import { handleAdminRequest } from '@server/services/admin/adminDispatcher'
+import { AdminAPIRequest, AdminAPIResponse, AdminPushEvent } from '@shared/types/ipc/ipcAdmin'
 
 export class WebSocketPlatform extends EventEmitter<PlatformEvents> implements PlatformInterface {
   private worker: Worker | null = null
@@ -46,7 +48,7 @@ export class WebSocketPlatform extends EventEmitter<PlatformEvents> implements P
     if (this.worker) this.worker?.terminate()
 
     this.worker = new Worker(wsPath, {
-      workerData: { userDataPath: app.getPath('userData'), stdout: true, stderr: true },
+      workerData: { userDataPath: getUserDataPath(), stdout: true, stderr: true },
       name: 'WebSocketPlatform',
       stdout: true,
       stderr: true
@@ -97,8 +99,36 @@ export class WebSocketPlatform extends EventEmitter<PlatformEvents> implements P
   public readonly id = PlatformIDs.WEBSOCKET
   public readonly name: string = 'WebSocket'
 
+  public broadcastAdminEvent(data: AdminPushEvent['data']): void {
+    this.worker?.postMessage({ type: 'admin-push', data } satisfies AdminPushEvent)
+  }
+
   private setupWorkerListeners(): void {
-    this.worker?.on('message', ({ event, data }: PlatformPayloads) => {
+    this.worker?.on('message', (msg: PlatformPayloads | AdminAPIRequest) => {
+      // Handle admin API requests from the Express worker
+      if ('type' in msg && msg.type === 'admin-api') {
+        const req = msg as AdminAPIRequest
+        handleAdminRequest(req.payload)
+          .then((result) => {
+            this.worker?.postMessage({
+              type: 'admin-api-response',
+              requestId: req.requestId,
+              result
+            } satisfies AdminAPIResponse)
+          })
+          .catch((err) => {
+            this.worker?.postMessage({
+              type: 'admin-api-response',
+              requestId: req.requestId,
+              result: null,
+              error: err instanceof Error ? err.message : String(err)
+            } satisfies AdminAPIResponse)
+          })
+        return
+      }
+
+      // Normal platform event handling
+      const { event, data } = msg as PlatformPayloads
       switch (event) {
         case PlatformEvent.CLIENT_UPDATED:
           {

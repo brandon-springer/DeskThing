@@ -1,4 +1,3 @@
-import { BrowserWindow } from 'electron'
 import {
   AppIPCData,
   ClientIPCData,
@@ -9,17 +8,17 @@ import {
 import { progressBus } from './progressBus'
 import { EventEmitter } from 'events'
 
-import logger from '@server/utils/logger'
-
 type EventMap = {
   'app:event': [AppIPCData]
   'client:event': [ClientIPCData]
   'utility:event': [UtilityIPCData]
 }
 
+type AdminBroadcaster = (data: ServerIPCData) => void
+
 class UIEventBus extends EventEmitter<EventMap> {
   private static instance: UIEventBus
-  private mainWindow: BrowserWindow | null = null
+  private adminBroadcaster: AdminBroadcaster | null = null
 
   private constructor() {
     super()
@@ -33,19 +32,17 @@ class UIEventBus extends EventEmitter<EventMap> {
     return UIEventBus.instance
   }
 
-  setMainWindow(window: BrowserWindow): void {
-    this.mainWindow = window
-  }
-
   private setupServerEventHandler(): void {
-    logger.warn('Server event handler is not implemented yet!')
-
     progressBus.on('progress', (progressEvent: ProgressEvent) => {
       this.sendIpcData({
         type: 'progress:event',
         payload: progressEvent
       })
     })
+  }
+
+  setAdminBroadcaster(fn: AdminBroadcaster): void {
+    this.adminBroadcaster = fn
   }
 
   emitAppEvent(data: AppIPCData): void {
@@ -60,16 +57,9 @@ class UIEventBus extends EventEmitter<EventMap> {
     this.emit('utility:event', data)
   }
 
-  // Uncomment once a full event bus is implemented for the frontend in v0.12 or v1.0
-  // emitServerEvent(data: ServerIPCData): void {
-  //   this.emit('server:event', data)
-  // }
-
-  async sendIpcData({ type, payload, window }: ServerIPCData): Promise<void> {
-    if (window && window instanceof BrowserWindow && !window.isDestroyed()) {
-      window.webContents.send(type, payload)
-    } else if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send(type, payload)
+  async sendIpcData(data: ServerIPCData): Promise<void> {
+    if (this.adminBroadcaster) {
+      this.adminBroadcaster(data)
     }
   }
 }

@@ -5,17 +5,16 @@
  */
 import fs, { existsSync } from 'fs'
 import { join } from 'path'
-import { app } from 'electron'
+import { getLogsPath } from '@server/utils/paths'
 import { LOGGING_LEVELS } from '@deskthing/types'
 import { Log, LOG_FILTER, ReplyData, ReplyFn, LoggingOptions, LOG_CONTEXTS } from '@shared/types'
 import { access, mkdir, readFile, rename, writeFile } from 'fs/promises'
 import { SettingsStoreClass } from '@shared/stores/settingsStore'
 
 // Logger configuration
-const logFile = join(app.getPath('userData'), 'logs', 'application.log.json')
-const readableLogFile = join(app.getPath('userData'), 'logs', 'readable.log')
-// Ensure log directory exists
-const logDir = join(app.getPath('userData'), 'logs')
+const logDir = getLogsPath()
+const logFile = join(logDir, 'application.log.json')
+const readableLogFile = join(logDir, 'readable.log')
 
 class Logger {
   private static instance: Logger

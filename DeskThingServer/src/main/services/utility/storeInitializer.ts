@@ -1,7 +1,7 @@
 import Logger from '../../utils/logger'
 import { storeProvider } from '../../stores/storeProvider'
 import { LOGGING_LEVELS, APP_REQUESTS, DESKTHING_EVENTS } from '@deskthing/types'
-import { BrowserWindow, ipcMain, shell } from 'electron'
+import { exec } from 'node:child_process'
 import { PlatformStoreEvent } from '@shared/stores/platformStore'
 import { uiEventBus } from '../events/uiBus'
 
@@ -130,18 +130,22 @@ export async function initializeStores(): Promise<void> {
 
   storeList.appStore.onAppMessage(APP_REQUESTS.OPEN, (data) => {
     if (typeof data.payload == 'string') {
-      const windows = BrowserWindow.getAllWindows()
-      if (windows.length === 0) {
-        shell.openExternal(data.payload)
-      } else {
-        uiEventBus.sendIpcData({
-          type: 'link-request',
-          payload: {
-            url: data.payload,
-            app: data.source
-          }
-        })
-      }
+      // Headless mode: log the URL. Could use xdg-open on Linux if needed.
+      Logger.info(`App "${data.source}" requested to open URL: ${data.payload}`, {
+        source: 'appCommunication',
+        function: 'handleRequestOpen',
+        domain: data.source
+      })
+      // Attempt to open with system browser
+      const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
+      exec(`${cmd} "${data.payload}"`, (err) => {
+        if (err) {
+          Logger.debug(`Could not open URL externally: ${err.message}`, {
+            source: 'appCommunication',
+            function: 'handleRequestOpen'
+          })
+        }
+      })
     } else {
       Logger.warn('App sent invalid payload for openAuthWindow', {
         source: 'appCommunication',
@@ -176,19 +180,12 @@ export async function initializeStores(): Promise<void> {
           domain: data.source
         }
       )
-      uiEventBus.sendIpcData({
-        type: 'display-user-form',
-        payload: { requestId: data.source, scope: data.payload }
-      })
-      ipcMain.once(
-        `user-data-response-${data.source}`,
-        async (_event, formData: Record<string, string>) => {
-          const appStore = await storeProvider.getStore('appStore')
-          appStore.sendDataToApp(data.source, {
-            type: DESKTHING_EVENTS.INPUT,
-            request: 'data',
-            payload: formData
-          })
+      Logger.warn(
+        `[handleRequestGetInput]: ${data.source} requested user input, but IPC is not available in headless mode.`,
+        {
+          source: 'appCommunication',
+          function: 'handleRequestGetInput',
+          domain: data.source
         }
       )
     },

@@ -800,7 +800,11 @@ export class PlatformStore extends EventEmitter<PlatformStoreEvents> implements 
         source: 'platformStore',
         function: 'statusChanged'
       })
-      console.log(`UNIMPLEMENTED: New status of ${platform.name}:`, status)
+      Logger.debug(`Platform ${platform.name} new status: ${JSON.stringify(status)}`, {
+        domain: 'platform',
+        source: 'platformStore',
+        function: 'statusChanged'
+      })
     })
 
     // Server started

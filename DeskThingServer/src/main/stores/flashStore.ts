@@ -14,7 +14,7 @@ import { FlashStoreClass, FlashStoreEvents } from '@shared/stores/flashStore'
 import flashProcessPath from '@processes/flashProcess?modulePath'
 import type { FlashEvent } from 'flashthing'
 import { Worker } from 'node:worker_threads'
-import { app } from 'electron/main'
+import { getUserDataPath } from '@server/utils/paths'
 import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import { LOGGING_LEVELS } from '@deskthing/types'
 
@@ -41,7 +41,7 @@ export class FlashStore
     if (this.flashProcess) this.flashProcess?.terminate()
 
     this.flashProcess = new Worker(flashProcessPath, {
-      workerData: { userDataPath: app.getPath('userData'), stdout: true, stderr: true },
+      workerData: { userDataPath: getUserDataPath(), stdout: true, stderr: true },
       name: 'FlashProcess',
       stdout: true,
       stderr: true

@@ -6,7 +6,7 @@
 import { ScriptInterface } from '@shared/interfaces/scriptInterface'
 import { ProgressChannel } from '@shared/types'
 import { progressBus } from '@server/services/events/progressBus'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { join } from 'path'
 import * as fs from 'fs'
 import { ClientConnectionMethod } from '@deskthing/types'
@@ -23,7 +23,7 @@ export const pushClientScript: ScriptInterface = async (adbService, { deviceId }
 
   progressBus.update(ProgressChannel.PUSH_SCRIPT, 'Finding Client', 10)
 
-  const userDataPath = app.getPath('userData')
+  const userDataPath = getUserDataPath()
   const manifestPath = join(userDataPath, 'webapp', 'manifest.json')
   const clientExists = fs.existsSync(manifestPath)
 

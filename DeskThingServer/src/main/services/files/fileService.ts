@@ -1,8 +1,4 @@
-/**
- * Imports the `app` module from the `electron` package.
- * This module provides access to the Electron application's functionality.
- */
-import { app } from 'electron'
+import { getUserDataPath, getTempPath } from '@server/utils/paths'
 import { join } from 'path'
 import fs from 'node:fs'
 import Logger from '@server/utils/logger'
@@ -92,7 +88,7 @@ const fileQueue = new FileOperationQueue()
  */
 export const readFromFile = async <T>(filename: string): Promise<T | undefined> => {
   return fileQueue.enqueue(filename, async () => {
-    const dataFilePath = join(app.getPath('userData'), filename)
+    const dataFilePath = join(getUserDataPath(), filename)
     try {
       const rawData = await fs.promises.readFile(dataFilePath)
       return JSON.parse(rawData.toString())
@@ -124,8 +120,8 @@ export const readFromFile = async <T>(filename: string): Promise<T | undefined> 
  */
 export const writeToFile = async <T>(data: T, filepath: string): Promise<void> => {
   return fileQueue.enqueue(filepath, async () => {
-    const finalPath = join(app.getPath('userData'), filepath)
-    const dirPath = join(app.getPath('userData'), ...filepath.split(/[/\\]/).slice(0, -1))
+    const finalPath = join(getUserDataPath(), filepath)
+    const dirPath = join(getUserDataPath(), ...filepath.split(/[/\\]/).slice(0, -1))
 
     try {
       // Check if file exists
@@ -145,7 +141,7 @@ export const writeToFile = async <T>(data: T, filepath: string): Promise<void> =
       // If file exists, use temp file for safe writing
       const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
       const tempFilename = `deskthing-${filepath.replace(/[/\\]/g, '-')}-${uniqueId}.tmp`
-      const tempPath = join(app.getPath('temp'), tempFilename)
+      const tempPath = join(getTempPath(), tempFilename)
 
       try {
         await fs.promises.writeFile(tempPath, JSON.stringify(data, null, 2))
@@ -177,8 +173,8 @@ export const writeToFile = async <T>(data: T, filepath: string): Promise<void> =
 }
 export const addToFile = async (data: string | Buffer, filepath: string): Promise<void> => {
   return fileQueue.enqueue(filepath, async () => {
-    const fullPath = join(app.getPath('userData'), filepath)
-    const dirPath = join(app.getPath('userData'), ...filepath.split(/[/\\]/).slice(0, -1))
+    const fullPath = join(getUserDataPath(), filepath)
+    const dirPath = join(getUserDataPath(), ...filepath.split(/[/\\]/).slice(0, -1))
 
     try {
       await fs.promises.mkdir(dirPath, { recursive: true })
@@ -212,7 +208,7 @@ export const writeToGlobalFile = async <T>(data: T, filepath: string): Promise<v
  */
 export const readFromGlobalFile = async <T>(filename: string): Promise<T | false> => {
   return fileQueue.enqueue(filename, async () => {
-    const dataFilePath = join(app.getPath('userData'), filename)
+    const dataFilePath = join(getUserDataPath(), filename)
     try {
       if (!fs.existsSync(dataFilePath)) {
         // File does not exist, create it with default data
@@ -243,7 +239,7 @@ export const deleteFile = async (filename: string): Promise<void> => {
   }
 
   return fileQueue.enqueue(filename, async () => {
-    const filePath = join(app.getPath('userData'), filename)
+    const filePath = join(getUserDataPath(), filename)
 
     try {
       const fileStats = await fs.promises.stat(filePath)

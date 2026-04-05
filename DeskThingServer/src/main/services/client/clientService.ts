@@ -1,7 +1,7 @@
 import logger from '@server/utils/logger'
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { progressBus } from '../events/progressBus'
 import { ProgressChannel } from '@shared/types'
 import { ClientManifest } from '@deskthing/types'
@@ -19,7 +19,7 @@ export async function downloadAndInstallClient(url: string): Promise<void> {
     'Download-Client',
     'Initializing download...'
   )
-  const userDataPath = app.getPath('userData')
+  const userDataPath = getUserDataPath()
   const extractDir = join(userDataPath, 'webapp')
 
   if (!existsSync(extractDir)) {
@@ -107,7 +107,7 @@ export async function downloadAndInstallClient(url: string): Promise<void> {
  * @returns The manifest of the client.
  */
 export const getClientManifest = async (): Promise<ClientManifest | null> => {
-  const userDataPath = app.getPath('userData')
+  const userDataPath = getUserDataPath()
   const manifestPath = join(userDataPath, 'webapp', 'manifest.json')
 
   try {
@@ -124,7 +124,7 @@ export const getClientManifest = async (): Promise<ClientManifest | null> => {
   }
 }
 export const updateManifest = async (manifest: Partial<ClientManifest>): Promise<void> => {
-  const userDataPath = app.getPath('userData')
+  const userDataPath = getUserDataPath()
   const manifestPath = join(userDataPath, 'webapp', 'manifest.json')
 
   try {
@@ -139,7 +139,7 @@ export const updateManifest = async (manifest: Partial<ClientManifest>): Promise
 }
 
 export const setManifestJS = async (manifest: Partial<ClientManifest>): Promise<void> => {
-  const userDataPath = app.getPath('userData')
+  const userDataPath = getUserDataPath()
   const scriptPath = join(userDataPath, 'webapp', 'manifest.js')
   try {
     const existingManifest = await getClientManifest()
@@ -163,7 +163,7 @@ document.dispatchEvent(new Event('manifestLoaded'))`
  */
 export async function loadClientFromZip(zipPath: string): Promise<ClientManifest> {
   progressBus.start(ProgressChannel.FN_CLIENT_INSTALL, 'Load-Client', 'Loading client from zip...')
-  const userDataPath = app.getPath('userData')
+  const userDataPath = getUserDataPath()
   const extractDir = join(userDataPath, 'webapp')
 
   if (!existsSync(extractDir)) {

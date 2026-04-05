@@ -11,7 +11,7 @@ import { readFromFile, writeToFile } from '../services/files/fileService'
 import Logger from '@server/utils/logger'
 import semverSatisfies from 'semver/functions/satisfies.js'
 import { defaultSettings } from '@server/static/defaultSettings'
-import { app } from 'electron/main'
+import { getVersion } from '@server/utils/paths'
 
 const LAST_SETTINGS_UPDATE = '0.11.11'
 
@@ -125,7 +125,7 @@ export class SettingsStore implements CacheableStore, SettingsStoreClass {
         return defaultSettings
       }
 
-      data.version = app.getVersion()
+      data.version = getVersion()
 
       return data
     } catch (err) {

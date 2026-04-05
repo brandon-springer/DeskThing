@@ -3,14 +3,14 @@
  */
 import { updateLoadingStatus } from '@server/windows/loadingWindow'
 import { AppData } from '@shared/types'
-import { app } from 'electron'
+import { getVersion, getUserDataPath } from '@server/utils/paths'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import semverSatisfies from 'semver/functions/satisfies.js'
 import { verifyAppInstanceStructure } from '../apps/appValidator'
 
 export const migrateDeskThing = async (prevVersion: string | undefined): Promise<void> => {
-  const currentVersion = app.getVersion()
+  const currentVersion = getVersion()
   if (prevVersion == currentVersion) return // the apps are the same version - early break
 
   try {
@@ -34,7 +34,7 @@ export const migrateDeskThing = async (prevVersion: string | undefined): Promise
  */
 const wipeData = async (): Promise<void> => {
   updateLoadingStatus('Wiping data...')
-  const path = app.getPath('userData')
+  const path = getUserDataPath()
   try {
     await rm(path, { recursive: true, force: true })
   } catch (error) {
@@ -73,7 +73,7 @@ const preEleven = async (): Promise<void> => {
  * Disables all of the apps so they don't run automatically (and dont create settings/configs that may interfere with updating)
  */
 const disableApps = async (): Promise<void> => {
-  const APP_PATH = join(app.getPath('userData'), 'apps.json')
+  const APP_PATH = join(getUserDataPath(), 'apps.json')
 
   try {
     const apps = JSON.parse(await readFile(APP_PATH, 'utf8')) as AppData
@@ -112,7 +112,7 @@ const elevenComp = async (prevVersion): Promise<void> => {
 
 const deleteFile = async (file: string): Promise<void> => {
   try {
-    const path = join(app.getPath('userData'), file)
+    const path = join(getUserDataPath(), file)
     await rm(path, { recursive: true, force: true })
   } catch (error) {
     console.error(`Error deleting file ${file}:`, error)

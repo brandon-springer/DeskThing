@@ -44,7 +44,7 @@ import {
   findFirstZipAsset
 } from './releaseUtils'
 import path from 'node:path'
-import { app } from 'electron'
+import { getTempPath } from '@server/utils/paths'
 import { unlink, writeFile } from 'node:fs/promises'
 
 /**
@@ -985,7 +985,7 @@ const fetchAndUnzipFileToGetManifest = async (
     store: 'migrationUtils'
   })
 
-  const tempPath = path.join(app.getPath('temp'), `release-${Date.now()}.zip`)
+  const tempPath = path.join(getTempPath(), `release-${Date.now()}.zip`)
 
   debug(`Downloading file: ${releaseFile.browser_download_url}`)
   log(`Saving to: ${tempPath}`)

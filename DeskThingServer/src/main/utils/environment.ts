@@ -2,7 +2,7 @@
  * Environment configuration utilities
  */
 import { join, dirname } from 'node:path'
-import { app } from 'electron'
+import { getExePath } from '@server/utils/paths'
 import dotenv from 'dotenv'
 
 /**
@@ -12,7 +12,7 @@ export function initializeEnvironment(): void {
   if (process.env.NODE_ENV === 'development') {
     dotenv.config()
   } else {
-    const userDataPath = dirname(app.getPath('exe'))
+    const userDataPath = dirname(getExePath())
     const envPath = join(userDataPath, '.env.production')
     dotenv.config({ path: envPath })
   }

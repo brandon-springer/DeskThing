@@ -1,5 +1,5 @@
 import { AutoLaunchStoreClass } from '@shared/stores/autoLaunchStore'
-import { app } from 'electron'
+import { getExePath } from '@server/utils/paths'
 import AutoLaunch from 'auto-launch'
 import Logger from '../utils/logger'
 import { SettingsStoreClass } from '@shared/stores/settingsStore'
@@ -15,7 +15,7 @@ export class AutoLaunchStore implements AutoLaunchStoreClass {
   constructor(private settingStore: SettingsStoreClass) {
     this.autoLauncher = new AutoLaunch({
       name: 'DeskThing',
-      path: app.getPath('exe')
+      path: getExePath()
     })
   }
   clearCache = async (): Promise<void> => {

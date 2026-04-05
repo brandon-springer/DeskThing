@@ -17,7 +17,17 @@ import {
 import { Log, Settings } from '../types'
 import { IPC_HANDLERS } from './ipcTypes'
 import { PaginatedResponse, SupporterData, SupporterFetchOptions } from '../supporter'
-import { OpenDialogOptions, OpenDialogReturnValue } from 'electron'
+export interface OpenDialogOptions {
+  title?: string
+  defaultPath?: string
+  filters?: { name: string; extensions: string[] }[]
+  properties?: string[]
+}
+
+export interface OpenDialogReturnValue {
+  canceled: boolean
+  filePaths: string[]
+}
 // import { FullTaskList } from '../taskTypes'
 
 export enum IPC_UTILITY_TYPES {

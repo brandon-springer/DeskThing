@@ -1,9 +1,11 @@
 import express, { NextFunction, Request, Response } from 'express'
 import cors from 'cors'
 import { Server } from 'node:http'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import { readFile } from 'node:fs/promises'
+import crypto from 'node:crypto'
 import {
   ClientConnectionMethod,
   ClientDeviceType,
@@ -11,9 +13,19 @@ import {
   ClientPlatformIDs
 } from '@deskthing/types'
 import EventEmitter from 'node:events'
+import { parentPort } from 'node:worker_threads'
+import { AdminAPIResponse } from '@shared/types/ipc/ipcAdmin'
+import { IPC_HANDLERS } from '@shared/types/ipc/ipcTypes'
+import { setupAdminRoutes } from './adminRoutes'
 
 type ExpressServerEvents = {
   'client-connected': [ClientManifest]
+}
+
+interface PendingRequest {
+  resolve: (value: unknown) => void
+  reject: (reason: Error) => void
+  timer: NodeJS.Timeout
 }
 
 export class ExpressServer extends EventEmitter<ExpressServerEvents> {
@@ -21,6 +33,7 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
   private server: Server | null = null
   private userDataPath: string
   private port: number
+  private pendingRequests: Map<string, PendingRequest> = new Map()
 
   constructor(expressApp: express.Application, userDataPath: string, port: number) {
     super()
@@ -29,14 +42,64 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
     this.userDataPath = userDataPath
   }
 
+  /**
+   * Send an admin API request to the main thread and await the response.
+   * The main thread's adminDispatcher handles the actual store calls.
+   */
+  public sendAdminRequest(handler: IPC_HANDLERS, payload: unknown): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const requestId = crypto.randomUUID()
+      const timer = setTimeout(() => {
+        this.pendingRequests.delete(requestId)
+        reject(new Error('Admin API request timeout (30s)'))
+      }, 30000)
+
+      this.pendingRequests.set(requestId, { resolve, reject, timer })
+
+      parentPort?.postMessage({
+        type: 'admin-api',
+        requestId,
+        payload: { kind: handler, ...payload }
+      })
+    })
+  }
+
+  /**
+   * Called by the worker thread when an admin-api-response message arrives
+   * from the main thread.
+   */
+  public handleAdminResponse(msg: AdminAPIResponse): void {
+    const pending = this.pendingRequests.get(msg.requestId)
+    if (!pending) return
+
+    clearTimeout(pending.timer)
+    this.pendingRequests.delete(msg.requestId)
+
+    if (msg.error) {
+      pending.reject(new Error(msg.error))
+    } else {
+      pending.resolve(msg.result)
+    }
+  }
+
   public initializeServer(): void {
     this.app.use(cors())
     this.app.use(express.json())
 
     this.app.use((req, _res, next) => {
-      console.log(`[ExpressWorker.${req.method}]: ${req.url}`)
+      // Skip noisy logging for admin API poll requests
+      if (!req.url.startsWith('/api/admin')) {
+        console.log(`[ExpressWorker.${req.method}]: ${req.url}`)
+      }
       next()
     })
+
+    // Admin API routes (must be before static routes)
+    setupAdminRoutes(this.app, this.sendAdminRequest.bind(this))
+
+    // Admin panel static files
+    this.setupAdminStaticRoutes()
+
     this.setupAppRoutes()
     this.setupResourceRoutes()
     this.setupProxyRoutes()
@@ -54,6 +117,53 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
     this.app.get('/', (_req, res) => {
       res.redirect('/client/')
     })
+  }
+
+  private setupAdminStaticRoutes(): void {
+    // Try to find admin build output relative to the worker script
+    // In production: out-headless/admin/
+    // The worker runs from out-headless/wsWebsocket.mjs or out-headless/chunks/
+    const possiblePaths = [
+      join(this.userDataPath, 'admin'),
+      join(dirname(fileURLToPath(import.meta.url)), 'admin'),
+      join(dirname(fileURLToPath(import.meta.url)), '..', 'admin')
+    ]
+
+    let adminDir: string | null = null
+    for (const p of possiblePaths) {
+      if (fs.existsSync(join(p, 'index.html'))) {
+        adminDir = p
+        break
+      }
+    }
+
+    if (adminDir) {
+      this.app.use(
+        '/admin',
+        express.static(adminDir, {
+          index: 'index.html',
+          extensions: ['html', 'htm']
+        })
+      )
+
+      // SPA fallback
+      this.app.get('/admin/*', (_req, res) => {
+        res.sendFile(join(adminDir!, 'index.html'))
+      })
+
+      console.log(`[ExpressWorker] Admin panel served from ${adminDir}`)
+    } else {
+      // Serve a placeholder if admin is not built yet
+      this.app.get('/admin', (_req, res) => {
+        res.send(`<!DOCTYPE html>
+<html><body style="font-family:system-ui;padding:2em;background:#1a1a2e;color:#e0e0e0">
+<h1>DeskThing Admin</h1>
+<p>Admin panel not built yet. Run <code>npm run build:admin</code> in DeskThingServer.</p>
+<h2>API Status</h2>
+<p>The admin API is active at <a href="/api/admin/apps" style="color:#4fc3f7">/api/admin/apps</a></p>
+</body></html>`)
+      })
+    }
   }
 
   public getServer(): Server | null {
@@ -120,15 +230,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
         res.status(404).send('App not found')
       }
     })
-
-    // this.app.get('/client/', (req, res) => {
-    //   const indexPath = join(this.userDataPath, 'webapp', 'index.html')
-    //   if (fs.existsSync(indexPath)) {
-    //     res.sendFile(indexPath)
-    //   } else {
-    //     res.status(404).send('Index file not found')
-    //   }
-    // })
   }
 
   private setupAppRoutes(): void {
@@ -178,7 +279,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
   private setupResourceRoutes(): void {
     const baseAppPath = join(this.userDataPath, 'apps')
 
-    // Serve icons dynamically based on the URL
     this.app.use(
       '/icons',
       express.static(baseAppPath, {
@@ -221,7 +321,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
       const thumbnailsDir = join(this.userDataPath, 'thumbnails')
       const thumbnailPath = join(thumbnailsDir, thumbnailId)
 
-      // Add .jpg extension if not present
       const fullPath = thumbnailPath.endsWith('.jpg') ? thumbnailPath : `${thumbnailPath}.jpg`
 
       if (fs.existsSync(fullPath)) {
@@ -243,7 +342,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
       const tasksDir = join(baseAppPath, 'images', 'tasks')
       const stepImgPath = join(tasksDir, stepId)
 
-      // Add .jpg extension if not present
       const fullPath = stepImgPath.endsWith('.jpg') ? stepImgPath : `${stepImgPath}.jpg`
 
       if (fs.existsSync(fullPath)) {
@@ -316,7 +414,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
       }
     })
 
-    // General-purpose proxy that can handle any content type
     this.app.get('/proxy/v1', async (req: Request, res: Response) => {
       try {
         const url = req.query.url as string
@@ -335,7 +432,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
           return
         }
 
-        // Copy all headers from the original response
         response.headers.forEach((value, key) => {
           res.setHeader(key, value)
         })
@@ -345,7 +441,6 @@ export class ExpressServer extends EventEmitter<ExpressServerEvents> {
           return
         }
 
-        // Stream the response directly to the client
         const reader = response.body.getReader()
 
         while (true) {
@@ -391,25 +486,19 @@ const getDeviceType = (userAgent: string | undefined, ip, port): ClientDeviceTyp
   userAgent = userAgent.toLowerCase()
 
   const deviceMap = {
-    // Desktops
     linux: { id: ClientPlatformIDs.Desktop, name: 'linux' },
     win: { id: ClientPlatformIDs.Desktop, name: 'windows' },
     mac: { id: ClientPlatformIDs.Desktop, name: 'mac' },
     chromebook: { id: ClientPlatformIDs.Desktop, name: 'chromebook' },
-
-    // Tablets
     ipad: { id: ClientPlatformIDs.Tablet, name: 'tablet' },
     webos: { id: ClientPlatformIDs.Tablet, name: 'webos' },
     kindle: { id: ClientPlatformIDs.Tablet, name: 'kindle' },
-
-    // Mobile
     iphone: { id: ClientPlatformIDs.Iphone, name: 'iphone' },
     'firefox os': { id: ClientPlatformIDs.Iphone, name: 'firefox-os' },
     blackberry: { id: ClientPlatformIDs.Iphone, name: 'blackberry' },
     'windows phone': { id: ClientPlatformIDs.Iphone, name: 'windows-phone' }
   }
 
-  // Special case for Android
   if (userAgent.includes('android')) {
     return {
       method: ClientConnectionMethod.LAN,
@@ -420,13 +509,11 @@ const getDeviceType = (userAgent: string | undefined, ip, port): ClientDeviceTyp
     }
   }
 
-  // Find matching device from map
   const matchedDevice = Object.entries(deviceMap).find(([key]) => userAgent.includes(key))
   if (matchedDevice) {
     return { method: ClientConnectionMethod.LAN, ip, port, ...matchedDevice[1] }
   }
 
-  // Default to unknown
   return {
     method: ClientConnectionMethod.LAN,
     ip,

@@ -28,21 +28,14 @@ vi.mock('@server/services/files/fileService', () => ({
   readFromFile: vi.fn()
 }))
 
-vi.mock('electron/main', () => {
-  return {
-    app: {
-      getVersion: vi.fn().mockReturnValue('0.10.8')
-    }
-  }
-})
-
-vi.mock('electron', () => {
-  return {
-    app: {
-      getVersion: vi.fn().mockReturnValue('0.10.8')
-    }
-  }
-})
+vi.mock('@server/utils/paths', () => ({
+  getUserDataPath: vi.fn().mockReturnValue('/mock/path'),
+  getTempPath: vi.fn().mockReturnValue('/mock/path/temp'),
+  getLogsPath: vi.fn().mockReturnValue('/mock/path/logs'),
+  getExePath: vi.fn().mockReturnValue('/mock/exe'),
+  getResourcesPath: vi.fn().mockReturnValue('/mock/path/resources'),
+  getVersion: vi.fn().mockReturnValue('0.10.8'),
+}))
 
 vi.mock('auto-launch', () => {
   return {

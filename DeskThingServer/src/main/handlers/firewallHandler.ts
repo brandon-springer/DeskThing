@@ -4,7 +4,7 @@ import os from 'os'
 import Logger from '@server/utils/logger'
 import fs from 'fs'
 import { join } from 'path'
-import { app } from 'electron'
+import { getTempPath } from '@server/utils/paths'
 import { LOGGING_LEVELS } from '@deskthing/types'
 import { ProgressChannel } from '@shared/types'
 import { progressBus } from '@server/services/events/progressBus'
@@ -124,7 +124,7 @@ export async function setupFirewall(port: number): Promise<void> {
 
       `
 
-      const tempScriptPath = join(app.getPath('temp'), 'setup-firewall.ps1')
+      const tempScriptPath = join(getTempPath(), 'setup-firewall.ps1')
       fs.writeFileSync(tempScriptPath, script)
 
       try {

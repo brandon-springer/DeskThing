@@ -2,6 +2,7 @@ console.log('[ADB Handler] Starting')
 import path from 'path'
 import { execFile } from 'child_process'
 import getPlatform from '@server/utils/get-platform'
+import { getResourcesPath } from '@server/utils/paths'
 import Logger from '@server/utils/logger'
 import { storeProvider } from '../stores/storeProvider'
 import { progressBus } from '@server/services/events/progressBus'
@@ -10,7 +11,7 @@ import { ProgressChannel } from '@shared/types'
 const isDevelopment = process.env.NODE_ENV === 'development'
 const execPath = isDevelopment
   ? path.join(__dirname, '..', '..', '..', 'adb_source', getPlatform())
-  : path.join(process.resourcesPath, getPlatform())
+  : getResourcesPath(getPlatform())
 
 const adbExecutableName = process.platform === 'win32' ? 'adb.exe' : 'adb'
 const adbPath = path.join(execPath, adbExecutableName)
@@ -49,7 +50,7 @@ export const handleAdbCommands = async (command: string): Promise<string> => {
     execFile(
       useGlobalADB ? 'adb' : adbPath,
       splitArgs(command),
-      { cwd: execPath },
+      { cwd: useGlobalADB ? undefined : execPath },
       (error, stdout, stderr) => {
         if (error) {
           progressBus.error(ProgressChannel.ADB, 'Error Encountered!', error.message)

@@ -1,12 +1,9 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
+  "references": [{ "path": "./tsconfig.node.json" }],
   "typedocOptions": {
     "entryPoints": [
       "src/main/**/*.ts",
-      "src/preload/**/*.ts",
-      "src/renderer/src/**/*.tsx",
-      "src/renderer/src/**/*.ts",
       "test/**/*.ts"
     ],
     "entryPointStrategy": "expand",
@@ -16,6 +13,6 @@
     "excludeExternals": true,
     "includeVersion": true,
     "categorizeByGroup": true,
-    "categoryOrder": ["Main", "Preload", "Renderer", "Test", "*"]
+    "categoryOrder": ["Main", "Test", "*"]
   }
 }

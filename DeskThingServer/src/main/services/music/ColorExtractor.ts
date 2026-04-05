@@ -3,7 +3,7 @@ import sharp from 'sharp'
 import Logger from '@server/utils/logger'
 import { join } from 'node:path'
 import { promises } from 'node:fs'
-import { app } from 'electron'
+import { getUserDataPath } from '@server/utils/paths'
 import { handleError } from '@server/utils/errorHandler'
 
 /**
@@ -45,7 +45,7 @@ export class ColorExtractor {
     } else if (input.startsWith('/resource/thumbnail/')) {
       // Handle internal resource paths by reading directly from thumbnails directory
       const thumbnailId = input.replace('/resource/thumbnail/', '')
-      const thumbnailPath = join(app.getPath('userData'), 'thumbnails', thumbnailId)
+      const thumbnailPath = join(getUserDataPath(), 'thumbnails', thumbnailId)
       const fullPath = thumbnailPath.endsWith('.jpg') ? thumbnailPath : `${thumbnailPath}.jpg`
       return await promises.readFile(fullPath)
     } else if (input.startsWith('/resource/image/')) {
@@ -53,7 +53,7 @@ export class ColorExtractor {
       const pathParts = input.replace('/resource/image/', '').split('/')
       const appName = pathParts[0]
       const imageName = pathParts.slice(1).join('/')
-      const imagePath = join(app.getPath('userData'), 'apps', appName, 'images', imageName)
+      const imagePath = join(getUserDataPath(), 'apps', appName, 'images', imageName)
       return await promises.readFile(imagePath)
     } else if (input.startsWith('/proxy/')) {
       // For proxy requests, still need to fetch externally
